@@ -35,14 +35,20 @@ GLuint g_vertexEBO;
 struct Vert {
 	glm::vec3 c; //координаты вершины
 	glm::vec3 n; //нормаль
-	public: 
 	Vert(float v1, float v2, float v3, float n1, float n2, float n3) {
 		c = glm::vec3(v1, v2, v3);
 		n = glm::vec3(n1, n2, n3);
 	}
 };
 
-
+struct Material {
+		float color[3];
+		Material(float c1, float c2, float c3) {
+			color[0] = c1;
+			color[1] = c2;
+			color[2] = c3;
+		}
+};
 
 
 void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsigned int> & indices)
@@ -121,19 +127,15 @@ void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
 
 void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigned int len2, 
 		std::vector <unsigned int> ind1, std::vector <unsigned int> ind2, 
-	 glm::mat4 trans1, glm::mat4 view1, glm::mat4 proj1, glm::mat4 trans2, glm::mat4 view2, glm::mat4 proj2  /*, float ** col*/) {
+		glm::mat4 trans1, glm::mat4 view1, glm::mat4 proj1, 
+	 	glm::mat4 trans2, glm::mat4 view2, glm::mat4 proj2,
+		glm::mat4 trans3, glm::mat4 view3, glm::mat4 proj3, std::vector <Material> maters
+  /*, float ** col*/) {
 			    /* Л. glfwPollEvents  обрабатывает только те события, которые уже находятся в очереди событий, а затем сразу же возвращается. 
     Обработка событий вызовет окно и входные обратные вызовы, связанные с этими событиями. */
 		glfwPollEvents();
 
 
-//Л. glClearColor задает красные, зеленые, синие и Альфа-значения, используемые glClear для очистки цветовых буферов.
-		//очищаем экран каждый кадр
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);               GL_CHECK_ERRORS;
-
-		/*Л. glClear устанавливает область окна к ранее выбранным значениям по glClearColor, glClearIndex, glClearDepth, glClearStencil, и glClearAccum.
-  Несколько цветовых буферов можно очистить одновременно, выбрав более чем один буфер за раз, используя glDrawBuffer.    */
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); GL_CHECK_ERRORS;
 
 /* Л. program.StartUseShader() запускаем шейдеры*/
     program.StartUseShader();                           GL_CHECK_ERRORS;
@@ -144,8 +146,7 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 		    /* Л.  glViewport определяет аффинное преобразование координат x и y из нормализованных координат устройства в координаты окна.  
     https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glViewport.xml*/
     glViewport  (0, 0, WIDTH, HEIGHT);
-
-		    /*Л. следующие две строчки - см.ранее*/
+		glEnable(GL_DEPTH_TEST);  		    /*Л. следующие две строчки - см.ранее*/
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear     (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -167,6 +168,9 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 	//	std::cout << "proj" << transformLoc3 << "\n";
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj1)); GL_CHECK_ERRORS;
 
+		program.SetUniform("g_color1", maters[0].color[0]);
+		program.SetUniform("g_color2", maters[0].color[1]);
+    program.SetUniform("g_color3", maters[0].color[2]);
 
 
 		unsigned int points[3] = {0, 1, 2};
@@ -189,6 +193,9 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 		transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj2)); GL_CHECK_ERRORS;
 
+    program.SetUniform("g_color1", maters[1].color[0]);
+		program.SetUniform("g_color2", maters[1].color[1]);
+    program.SetUniform("g_color3", maters[1].color[2]);
 
 
 		for (int i = 0; 3 * i + 2 < ind2.size(); i++) {
@@ -198,6 +205,23 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 	
     	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
 		}
+
+		transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
+		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans3)); GL_CHECK_ERRORS;
+
+		transformLoc1 = glGetUniformLocation(program.GetProgram(), "g_matrixView");   GL_CHECK_ERRORS;
+		glUniformMatrix4fv(transformLoc1, 1, GL_FALSE, glm::value_ptr(view3)); GL_CHECK_ERRORS;
+
+		transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
+		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj3)); GL_CHECK_ERRORS;
+
+		program.SetUniform("g_color1", maters[2].color[0]);
+		program.SetUniform("g_color2", maters[2].color[1]);
+    program.SetUniform("g_color3", maters[2].color[2]);
+
+		
+    glDrawArrays(GL_TRIANGLE_FAN, len1 + len2, 4);
+		
 
     glBindVertexArray(0);
 
@@ -218,7 +242,6 @@ void vectorMerge(std::vector <T> &v1, std::vector<T> &v2, std::vector<T> &res) {
 	for (auto i = v2.begin(); i < v2.end(); i++) {
 		res.push_back(*i);
 	}
-
 }
 
 int initGL()
@@ -301,13 +324,18 @@ glfwSetInputMode устанавливает режим ввода для ука�
 
 	double ms_per_update =  4.999f;//0.115f;
 	
-	std::vector <Vert> verts1, verts2, resVerts;
+	std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
   std::vector <unsigned int> indices1, indices2, resInd;
+	std::vector <Material> maters;
+
+	maters.push_back(Material(1.0f, 0.0f, 0.0f));
+	maters.push_back(Material(0.0f, 1.0f, 0.0f));
+	maters.push_back(Material(0.0f, 0.0f, 1.0f));
 
 
 	glm::mat4 trans1(1.0f), view1(1.0f), project1(1.0f);  GL_CHECK_ERRORS;
 	trans1 = glm::scale(trans1, glm::vec3(0.1, 0.2, 0.2));  GL_CHECK_ERRORS;
-	view1 = glm::translate(view1, glm::vec3(0.0f, 0.3f, -3.0f));
+	view1 = glm::translate(view1, glm::vec3(0.0f, 0.3f, -2.0f));
 	float aspect = WIDTH / HEIGHT;
 	project1 = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
@@ -315,11 +343,23 @@ glfwSetInputMode устанавливает режим ввода для ука�
 
 	glm::mat4 trans2(1.0f), view2(1.0f), project2(1.0f);  GL_CHECK_ERRORS;
 	trans2 = glm::scale(trans2, glm::vec3(0.3, 0.5, 0.5));  GL_CHECK_ERRORS;
-	view2 = glm::translate(view2, glm::vec3(0.0f, -0.4f, -3.0f));
+	view2 = glm::translate(view2, glm::vec3(0.0f, -0.4f, -2.0f));
 	project2 = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
+	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS;
+
+	vertsQuad.push_back(Vert(-100, 100, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(-100, -100, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(100, -100, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(100, 100, 0, 0, 0, 1));
+
+	glm::mat4 trans3(1.0f), view3(1.0f), project3(1.0f);  GL_CHECK_ERRORS;
+	trans3 = glm::rotate(trans3, 90.0f, glm::vec3(1.0, 0.0, 0.0));  GL_CHECK_ERRORS;
+	view3 = glm::translate(view3, glm::vec3(0.0f, -60.0f, -3.0f));
+	project3 = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS
 
-	vectorMerge(verts1, verts2, resVerts);
+	vectorMerge(verts1, verts2, resVerts1);
+	vectorMerge(resVerts1, vertsQuad, resVerts);
 	vectorMerge(indices1, indices2, resInd);
 
 	load(resVerts, resInd);
@@ -332,7 +372,8 @@ glfwSetInputMode устанавливает режим ввода для ука�
 		
 		draw(program, window, verts1.size(), verts2.size(), indices1, indices2,
 				trans1, view1, project1, 
-				trans2, view2, project2); GL_CHECK_ERRORS
+				trans2, view2, project2,
+				trans3, view3, project3, maters); GL_CHECK_ERRORS
 		sleep(ms_per_update - difftime(time(0), begin));
 	}
 
