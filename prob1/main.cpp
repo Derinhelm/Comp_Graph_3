@@ -51,6 +51,7 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 {
     Assimp::Importer import;
 		const aiScene * scene = import.ReadFile(path, aiProcess_Triangulate);	
+		std:: cout << scene -> mNumMaterials << "\n";
 			//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
 
 		//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
@@ -174,33 +175,23 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 			for (int j = 0; j < 3; j++) {
 				points[j] = ind1[3 * i + j];
 			}
-		//	for (int k = 0; k < 3; k++) {
-		//		glm::vec4 v1 = proj * view *  trans * glm::vec4(verts[points[k]].c, 1.0); 
-		//		std::cout << v1[0] << " " << v1[1] << " " << v1[2] << "\n";
-		//	}
-		//	std::cout << verts[points[0]].c[0] << " "<< verts[points[0]].c[1] << " " << verts[points[0]].c[2]  << "\n";
-	//		std::cout << verts[points[1]].c[0] << " "<< verts[points[1]].c[1] << " " << verts[points[1]].c[2]  << "\n";
-	//		std::cout << verts[points[2]].c[0] << " "<< verts[points[2]].c[1] << " " << verts[points[2]].c[2]  << "\n";
-	//		std ::cout << "////////////////////" << "\n";
+	
     	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
 		}
 
 
 		transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
-	//	std::cout << "trans" << transformLoc2 << "\n";
 		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans2)); GL_CHECK_ERRORS;
 
 		transformLoc1 = glGetUniformLocation(program.GetProgram(), "g_matrixView");   GL_CHECK_ERRORS;
-	//	std::cout << "view" << transformLoc1 << "\n";
 		glUniformMatrix4fv(transformLoc1, 1, GL_FALSE, glm::value_ptr(view2)); GL_CHECK_ERRORS;
 
 		transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
-	//	std::cout << "proj" << transformLoc3 << "\n";
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj2)); GL_CHECK_ERRORS;
 
 
 
-		for (int i = 0; 3 * i + 2 < ind2.size(); i++) {//3 * i + 2 < indices.size(); i++) {
+		for (int i = 0; 3 * i + 2 < ind2.size(); i++) {
 			for (int j = 0; j < 3; j++) {
 				points[j] = len1 + ind2[3 * i + j];
 			}
@@ -318,15 +309,14 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	trans1 = glm::scale(trans1, glm::vec3(0.1, 0.2, 0.2));  GL_CHECK_ERRORS;
 	view1 = glm::translate(view1, glm::vec3(0.0f, 0.3f, -3.0f));
 	float aspect = WIDTH / HEIGHT;
-	project1 = glm::ortho(-1.0f, 1.0f, -1.0f * aspect, 1.0f * aspect, 0.1f, 100.0f); ///////////////////////////////////////////////////////
-	///////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+	project1 = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
 
 
 	glm::mat4 trans2(1.0f), view2(1.0f), project2(1.0f);  GL_CHECK_ERRORS;
 	trans2 = glm::scale(trans2, glm::vec3(0.3, 0.5, 0.5));  GL_CHECK_ERRORS;
 	view2 = glm::translate(view2, glm::vec3(0.0f, -0.4f, -3.0f));
-	project2 = glm::ortho(-1.0f, 1.0f, -1.0f * aspect, 1.0f * aspect, 0.1f, 100.0f );
+	project2 = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS
 
 	vectorMerge(verts1, verts2, resVerts);
