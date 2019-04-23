@@ -21,6 +21,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 static const GLsizei WIDTH = 1400, HEIGHT = 1000; //размеры окна
 
 //Создание переменной для хранения идентификатора VBO(см.далее)
@@ -42,7 +43,16 @@ struct Vert {
 };
 
 
-void fun1(const aiScene * scene, std::vector <Vert> & v, std::vector <unsigned int> & ind) {
+
+
+void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsigned int> & indices)
+//Создаем и загружаем геометрию поверхности
+  //
+{
+    Assimp::Importer import;
+		const aiScene * scene = import.ReadFile(path, aiProcess_Triangulate);	
+			//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
+
 		//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
 		//Сразу перейдем к потомку
 		aiNode * root = scene -> mRootNode; 
@@ -52,32 +62,20 @@ void fun1(const aiScene * scene, std::vector <Vert> & v, std::vector <unsigned i
 			aiMesh *mesh = scene->mMeshes[child -> mMeshes[i]];
 			for (int j = 0; j < mesh->mNumVertices; j++) {
 				Vert curtVert(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z);
-				v.push_back(curtVert);		
+				verts.push_back(curtVert);		
 			}
 			for(unsigned int i = 0; i < mesh->mNumFaces; i++)
 			{
     		aiFace face = mesh->mFaces[i];
     		for(unsigned int j = 0; j < face.mNumIndices; j++){
-        		ind.push_back(face.mIndices[j]);
+        		indices.push_back(face.mIndices[j]);
 				}
 			// каждого меша еще надо сделать материалы, но потом
 
 			}  
 		}
-
-
 }
-
-void load (std::string path, std::vector <Vert> & verts, std::vector <unsigned int> & indices)
-//Создаем и загружаем геометрию поверхности
-  //
-{
-    Assimp::Importer import;
-		const aiScene * scene = import.ReadFile(path, aiProcess_Triangulate);	
-			//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
-
-		fun1(scene, verts, indices);
-	
+void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
     g_vertexBufferObject = 0;
     GLuint vertexLocation = 0; // simple layout, assume have only positions at location = 0
 
@@ -95,9 +93,6 @@ void load (std::string path, std::vector <Vert> & verts, std::vector <unsigned i
 		glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vert), &verts[0], GL_STATIC_DRAW);                                GL_CHECK_ERRORS;
 	
 	
-	//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, g_vertexEBO);             
-  //  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-
 
 /*Еще 2 строчек -  Vertex Arrays Object (VAO) — штука, которая говорит OpenGL, какую часть VBO следует использовать в последующих командах. 
  Представьте, что VAO представляет собой массив, в элементах которого хранится информация о том, какую часть некого VBO использовать, 
@@ -123,8 +118,9 @@ void load (std::string path, std::vector <Vert> & verts, std::vector <unsigned i
 
 
 
-void draw(ShaderProgram program, GLFWwindow*  window, std::vector <Vert> & verts, std::vector <unsigned int> & indices,
-	 glm::mat4 trans, glm::mat4 view, glm::mat4 proj  /*, float ** col*/) {
+void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigned int len2, 
+		std::vector <unsigned int> ind1, std::vector <unsigned int> ind2, 
+	 glm::mat4 trans1, glm::mat4 view1, glm::mat4 proj1, glm::mat4 trans2, glm::mat4 view2, glm::mat4 proj2  /*, float ** col*/) {
 			    /* Л. glfwPollEvents  обрабатывает только те события, которые уже находятся в очереди событий, а затем сразу же возвращается. 
     Обработка событий вызовет окно и входные обратные вызовы, связанные с этими событиями. */
 		glfwPollEvents();
@@ -159,22 +155,24 @@ void draw(ShaderProgram program, GLFWwindow*  window, std::vector <Vert> & verts
     glBindVertexArray(g_vertexArrayObject); GL_CHECK_ERRORS;
 		
 		GLuint transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
-		std::cout << "trans" << transformLoc2 << "\n";
-		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans)); GL_CHECK_ERRORS;
+	//	std::cout << "trans" << transformLoc2 << "\n";
+		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans1)); GL_CHECK_ERRORS;
 
 		GLuint transformLoc1 = glGetUniformLocation(program.GetProgram(), "g_matrixView");   GL_CHECK_ERRORS;
-		std::cout << "view" << transformLoc1 << "\n";
-		glUniformMatrix4fv(transformLoc1, 1, GL_FALSE, glm::value_ptr(view)); GL_CHECK_ERRORS;
+	//	std::cout << "view" << transformLoc1 << "\n";
+		glUniformMatrix4fv(transformLoc1, 1, GL_FALSE, glm::value_ptr(view1)); GL_CHECK_ERRORS;
 
 		GLuint transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
-		std::cout << "proj" << transformLoc3 << "\n";
-		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj)); GL_CHECK_ERRORS;
+	//	std::cout << "proj" << transformLoc3 << "\n";
+		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj1)); GL_CHECK_ERRORS;
+
+
 
 		unsigned int points[3] = {0, 1, 2};
 		//174079
-		for (int i = 0; i < 174079; i++) {//3 * i + 2 < indices.size(); i++) {
+		for (int i = 0; 3 * i + 2 < ind1.size(); i++) {//3 * i + 2 < indices.size(); i++) {
 			for (int j = 0; j < 3; j++) {
-				points[j] = indices[3 * i + j];
+				points[j] = ind1[3 * i + j];
 			}
 		//	for (int k = 0; k < 3; k++) {
 		//		glm::vec4 v1 = proj * view *  trans * glm::vec4(verts[points[k]].c, 1.0); 
@@ -186,6 +184,30 @@ void draw(ShaderProgram program, GLFWwindow*  window, std::vector <Vert> & verts
 	//		std ::cout << "////////////////////" << "\n";
     	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
 		}
+
+
+		transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
+	//	std::cout << "trans" << transformLoc2 << "\n";
+		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans2)); GL_CHECK_ERRORS;
+
+		transformLoc1 = glGetUniformLocation(program.GetProgram(), "g_matrixView");   GL_CHECK_ERRORS;
+	//	std::cout << "view" << transformLoc1 << "\n";
+		glUniformMatrix4fv(transformLoc1, 1, GL_FALSE, glm::value_ptr(view2)); GL_CHECK_ERRORS;
+
+		transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
+	//	std::cout << "proj" << transformLoc3 << "\n";
+		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj2)); GL_CHECK_ERRORS;
+
+
+
+		for (int i = 0; 3 * i + 2 < ind2.size(); i++) {//3 * i + 2 < indices.size(); i++) {
+			for (int j = 0; j < 3; j++) {
+				points[j] = len1 + ind2[3 * i + j];
+			}
+	
+    	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
+		}
+
     glBindVertexArray(0);
 
     program.StopUseShader();
@@ -193,6 +215,18 @@ void draw(ShaderProgram program, GLFWwindow*  window, std::vector <Vert> & verts
 //Л. glfwSwapBuffers меняет местами передний и задний буферы указанного окна. 
 //Если интервал подкачки больше нуля, драйвер GPU ожидает указанное количество обновлений экрана перед заменой буферов.
 		glfwSwapBuffers(window); 
+
+}
+
+template<typename T>
+void vectorMerge(std::vector <T> &v1, std::vector<T> &v2, std::vector<T> &res) {
+	for (auto i = v1.begin(); i < v1.end(); i++) {
+		res.push_back(*i);
+	}
+
+	for (auto i = v2.begin(); i < v2.end(); i++) {
+		res.push_back(*i);
+	}
 
 }
 
@@ -276,23 +310,29 @@ glfwSetInputMode устанавливает режим ввода для ука�
 
 	double ms_per_update =  4.999f;//0.115f;
 	
-	std::vector <Vert> verts;
-  std::vector <unsigned int> indices;
+	std::vector <Vert> verts1, verts2, resVerts;
+  std::vector <unsigned int> indices1, indices2, resInd;
 
 
-	glm::mat4 trans(1.0f), view(1.0f), project(1.0f);  GL_CHECK_ERRORS;
-	trans = glm::scale(trans, glm::vec3(0.3, 0.5, 0.5));  GL_CHECK_ERRORS;
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+	glm::mat4 trans1(1.0f), view1(1.0f), project1(1.0f);  GL_CHECK_ERRORS;
+	trans1 = glm::scale(trans1, glm::vec3(0.1, 0.2, 0.2));  GL_CHECK_ERRORS;
+	view1 = glm::translate(view1, glm::vec3(0.0f, 0.3f, -3.0f));
 	float aspect = WIDTH / HEIGHT;
-	project = glm::ortho(-1.0f, 1.0f, -1.0f * aspect, 1.0f * aspect, 0.1f, 100.0f );
-	for (int i = 0; i < 4; i++) {
-		for (int j = 0; j < 4; j++) {
-				std::cout << trans[i][j] << " ";
-		}
-		std::cout << "\n";
-	}
-	load("/media/derin/DATA/Computer_Graph/3/prob1/objects/vase.obj", verts, indices); GL_CHECK_ERRORS
+	project1 = glm::ortho(-1.0f, 1.0f, -1.0f * aspect, 1.0f * aspect, 0.1f, 100.0f); ///////////////////////////////////////////////////////
+	///////////////////////////////////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
 
+
+	glm::mat4 trans2(1.0f), view2(1.0f), project2(1.0f);  GL_CHECK_ERRORS;
+	trans2 = glm::scale(trans2, glm::vec3(0.3, 0.5, 0.5));  GL_CHECK_ERRORS;
+	view2 = glm::translate(view2, glm::vec3(0.0f, -0.4f, -3.0f));
+	project2 = glm::ortho(-1.0f, 1.0f, -1.0f * aspect, 1.0f * aspect, 0.1f, 100.0f );
+	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS
+
+	vectorMerge(verts1, verts2, resVerts);
+	vectorMerge(indices1, indices2, resInd);
+
+	load(resVerts, resInd);
 	while (!glfwWindowShouldClose(window))
 	{
 		time_t begin = time(0);  	
@@ -300,9 +340,10 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	//	std::cout << "----------------------------" << "\n";
   	//load("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj");
 		
-		draw(program, window, verts, indices, trans, view, project); GL_CHECK_ERRORS
+		draw(program, window, verts1.size(), verts2.size(), indices1, indices2,
+				trans1, view1, project1, 
+				trans2, view2, project2); GL_CHECK_ERRORS
 		sleep(ms_per_update - difftime(time(0), begin));
-		break;
 	}
 
 	//очищаем vbo и vao перед закрытием программы
@@ -311,6 +352,5 @@ glfwSetInputMode устанавливает режим ввода для ука�
   glDeleteBuffers(1, &g_vertexBufferObject);
 
 	glfwTerminate();
-	std::cout << indices.size()<<"\n";
 	return 0;
 }
