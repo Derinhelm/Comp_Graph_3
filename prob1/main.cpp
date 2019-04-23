@@ -43,10 +43,25 @@ struct Vert {
 
 struct Material {
 		float color[3];
-		Material(float c1, float c2, float c3) {
+		float diff[3];
+		float ambient[3];
+		float specular[3];
+		float shininess;
+		Material(float c1, float c2, float c3, float d1, float d2, float d3, float a1, float a2, float a3,
+					float s1, float s2, float s3, float sh) {
 			color[0] = c1;
 			color[1] = c2;
 			color[2] = c3;
+			diff[0] = d1;
+			diff[1] = d2;
+			diff[2] = d3;
+			ambient[0] = a1;
+			ambient[1] = a2;
+			ambient[2] = a3;
+			specular[0] = s1;
+			specular[1] = s2;
+			specular[2] = s3;
+			shininess = sh;
 		}
 };
 
@@ -123,13 +138,26 @@ void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
     glBindVertexArray(0);
 }
 
+void loadMaterial(GLuint progrNum, Material mat) {
+		GLint lightPosLoc = glGetUniformLocation(progrNum, "g_objectColor");
+		glUniform3f(lightPosLoc, mat.color[0], mat.color[1], mat.color[2]); 
+		GLint diffPosLoc = glGetUniformLocation(progrNum, "g_diffuseStrength");
+		glUniform3f(diffPosLoc, mat.diff[0], mat.diff[1], mat.diff[2]); 
+		GLint ambPosLoc = glGetUniformLocation(progrNum, "g_ambient");
+		glUniform3f(ambPosLoc, mat.ambient[0], mat.ambient[1], mat.ambient[2]); 
+		GLint specPosLoc = glGetUniformLocation(progrNum, "g_specularStrength");
+		glUniform3f(specPosLoc, mat.specular[0], mat.specular[1], mat.specular[2]); 
+		GLint shinPosLoc = glGetUniformLocation(progrNum, "g_shininess");
+		glUniform1f(shinPosLoc, mat.shininess); 
 
+}
 
 void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigned int len2, 
 		std::vector <unsigned int> ind1, std::vector <unsigned int> ind2, 
 		glm::mat4 trans1, glm::mat4 view1, glm::mat4 proj1, 
 	 	glm::mat4 trans2, glm::mat4 view2, glm::mat4 proj2,
-		glm::mat4 trans3, glm::mat4 view3, glm::mat4 proj3, std::vector <Material> maters
+		glm::mat4 trans3, glm::mat4 view3, glm::mat4 proj3, 
+		std::vector <Material> maters, float * lightPos, float * camPos
   /*, float ** col*/) {
 			    /* Л. glfwPollEvents  обрабатывает только те события, которые уже находятся в очереди событий, а затем сразу же возвращается. 
     Обработка событий вызовет окно и входные обратные вызовы, связанные с этими событиями. */
@@ -154,8 +182,16 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
     //
 		    /*Л. рисуем примитивы, которые загрузили ранее
       https://eax.me/opengl-vbo-vao-shaders/*/   
+
+
     glBindVertexArray(g_vertexArrayObject); GL_CHECK_ERRORS;
+
+		GLint lightPosLoc = glGetUniformLocation(program.GetProgram(), "g_lightPos");
+		glUniform3f(lightPosLoc, lightPos[0], lightPos[1], lightPos[2]); 
 		
+		GLint camPosLoc = glGetUniformLocation(program.GetProgram(), "g_camPos");
+		glUniform3f(camPosLoc, camPos[0], camPos[1], camPos[2]); 
+
 		GLuint transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
 	//	std::cout << "trans" << transformLoc2 << "\n";
 		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans1)); GL_CHECK_ERRORS;
@@ -168,13 +204,10 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 	//	std::cout << "proj" << transformLoc3 << "\n";
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj1)); GL_CHECK_ERRORS;
 
-		program.SetUniform("g_color1", maters[0].color[0]);
-		program.SetUniform("g_color2", maters[0].color[1]);
-    program.SetUniform("g_color3", maters[0].color[2]);
-
-
+		loadMaterial(program.GetProgram(), maters[0]);
+	
 		unsigned int points[3] = {0, 1, 2};
-		//174079
+		
 		for (int i = 0; 3 * i + 2 < ind1.size(); i++) {//3 * i + 2 < indices.size(); i++) {
 			for (int j = 0; j < 3; j++) {
 				points[j] = ind1[3 * i + j];
@@ -193,9 +226,7 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 		transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj2)); GL_CHECK_ERRORS;
 
-    program.SetUniform("g_color1", maters[1].color[0]);
-		program.SetUniform("g_color2", maters[1].color[1]);
-    program.SetUniform("g_color3", maters[1].color[2]);
+    loadMaterial(program.GetProgram(), maters[1]);
 
 
 		for (int i = 0; 3 * i + 2 < ind2.size(); i++) {
@@ -215,9 +246,8 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 		transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj3)); GL_CHECK_ERRORS;
 
-		program.SetUniform("g_color1", maters[2].color[0]);
-		program.SetUniform("g_color2", maters[2].color[1]);
-    program.SetUniform("g_color3", maters[2].color[2]);
+		loadMaterial(program.GetProgram(), maters[2]);
+
 
 		
     glDrawArrays(GL_TRIANGLE_FAN, len1 + len2, 4);
@@ -322,15 +352,15 @@ glfwSetInputMode устанавливает режим ввода для ука�
   glfwSwapInterval(1); // force 60 frames per second
 	time_t prev = time(0);
 
-	double ms_per_update =  4.999f;//0.115f;
+	double ms_per_update = 0.115f;
 	
 	std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
   std::vector <unsigned int> indices1, indices2, resInd;
 	std::vector <Material> maters;
 
-	maters.push_back(Material(1.0f, 0.0f, 0.0f));
-	maters.push_back(Material(0.0f, 1.0f, 0.0f));
-	maters.push_back(Material(0.0f, 0.0f, 1.0f));
+	maters.push_back(Material(1.0f, 0.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
+	maters.push_back(Material(0.0f, 1.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
+	maters.push_back(Material(0.0f, 0.0f, 1.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 
 
 	glm::mat4 trans1(1.0f), view1(1.0f), project1(1.0f);  GL_CHECK_ERRORS;
@@ -363,17 +393,19 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	vectorMerge(indices1, indices2, resInd);
 
 	load(resVerts, resInd);
+	float t = 0;
+	float lightPos[] = {-1.0f, 0.0f, 0.0f};
+	float camPos[] = {0.0f, 0.0f, 0.0f};
 	while (!glfwWindowShouldClose(window))
 	{
 		time_t begin = time(0);  	
 		
-	//	std::cout << "----------------------------" << "\n";
-  	//load("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj");
-		
+		view1 = glm::translate(glm::mat4(1.0f), glm::vec3(0.3f * sin(t), 0.3f, -2.0f));
+		t += 0.1f;
 		draw(program, window, verts1.size(), verts2.size(), indices1, indices2,
 				trans1, view1, project1, 
 				trans2, view2, project2,
-				trans3, view3, project3, maters); GL_CHECK_ERRORS
+				trans3, view3, project3, maters, lightPos, camPos); GL_CHECK_ERRORS
 		sleep(ms_per_update - difftime(time(0), begin));
 	}
 
