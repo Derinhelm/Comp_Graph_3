@@ -30,6 +30,7 @@ GLuint g_vertexBufferObject;
 	//Создание переменной для хранения идентификатора VAO(см.далее)
 GLuint g_vertexArrayObject;
 GLuint g_vertexEBO;
+float min1 = 100000, max1 = -100000; ///////////////////////////////////////////////////////////////////////убрать
 
 
 struct Vert {
@@ -79,7 +80,7 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 		//Сразу перейдем к потомку
 		aiNode * root = scene -> mRootNode; 
 		aiNode * child = root -> mChildren[0]; // только один потомок
-		float min1 = 100000, max1 = -100000;
+		min1 = 100000, max1 = -100000;
 		for(unsigned int i = 0; i < child-> mNumMeshes; i++)  {
 			aiMesh *mesh = scene->mMeshes[child -> mMeshes[i]];
 			for (int j = 0; j < mesh->mNumVertices; j++) {
@@ -102,8 +103,7 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 
 			}  
 		}
-		std::cout << min1 << "\n" << max1 << "\n";
-		std::cout << "---------------------------------" << "\n";
+
 }
 void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
     g_vertexBufferObject = 0;
@@ -348,34 +348,42 @@ glfwSetInputMode устанавливает режим ввода для ука�
 // Л. glfwSwapInterval устанавливает интервал подкачки для текущего контекста OpenGL или OpenGL ES,
 // т. е. количество обновлений экрана, ожидающих с момента вызова glfwSwapBuffers до подкачки буферов и возврата.
   glfwSwapInterval(1); // force 60 frames per second
-	time_t prev = time(0);
 
-	double ms_per_update = 0.115f;
 	
 	std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
   std::vector <unsigned int> indices1, indices2, resInd;
 	std::vector <Material> maters;
-	float lightPos[] = {0.0f, 1.0f, 0.0f};
-	float camPos[] = {0.0f, 0.0f, 2.8f};//0.9f, 2.8f};
+	float lightPos[] = {0.2f, (0.341855 + 1.0813) * 0.5 + 0.05, 0.0f};
+	float camPos[] = {0.0f, 0.8, 2.8f};//1.8, 2.8};////0.9f, 2.8f};
 
 	maters.push_back(Material(1.0f, 0.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 	maters.push_back(Material(0.0f, 1.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 	maters.push_back(Material(0.0f, 0.0f, 1.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 
 	glm::mat4 view(1.0f), project(1.0f);
-	glm::mat4 trans1(1.0f), scale1(1.0f);  GL_CHECK_ERRORS;
-	scale1 = glm::scale(scale1, glm::vec3(0.1, 0.2, 0.2));  GL_CHECK_ERRORS;
-	trans1 = glm::translate(scale1, glm::vec3(0.0f, 0.0f, 0.0f));
+	glm::mat4 trans1(1.0f);  GL_CHECK_ERRORS;
+	float shiftVase = (0.341855 + 1.0813) * 0.5 + 0.937952 * 0.2;
+	glm::mat4 b1(1.0f), b2(1.0f);
+	
+	trans1 = glm::translate(b1, glm::vec3(0.0f, shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.1, 0.2, 0.2));
 	view = glm::translate(view, glm::vec3(-camPos[0], -camPos[1], -camPos[2]));
 	float aspect = WIDTH / HEIGHT;
 	project = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
 	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
+	//минимальныая координата вазы -0.937952, максимальная 1.78299
 
+	std::cout << min1 << "\n" << max1 << "\n";
+	std::cout << "---------------------------------" << "\n";
 
 	glm::mat4 trans2(1.0f);  GL_CHECK_ERRORS;
-	trans2 = glm::scale(trans2, glm::vec3(0.3, 0.5, 0.5));  GL_CHECK_ERRORS;
-	trans2 = glm::translate(trans2, glm::vec3(0.0f, 0.0f, 0.0f));
+	
+	glm::mat4 a1(1.0f), a2(1.0f);
+	trans2 = glm::translate(a1, glm::vec3(0.0f, 0.341855 * 0.5, 0.0f)) * glm::scale(a2, glm::vec3(0.3, 0.5, 0.5));
+
 	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS;
+		//минимальныая координата стола -0.341855, максимальная 1.0813
+	std::cout << min1 << "\n" << max1 << "\n";
+	std::cout << "---------------------------------" << "\n";
 
 	vertsQuad.push_back(Vert(-100, 100, 0, 0, 0, 1));
 	vertsQuad.push_back(Vert(-100, -100, 0, 0, 0, 1));
@@ -384,8 +392,7 @@ glfwSetInputMode устанавливает режим ввода для ука�
 
 	glm::mat4 trans3(1.0f);  GL_CHECK_ERRORS;
 	trans3 = glm::rotate(trans3, 90.0f, glm::vec3(1.0, 0.0, 0.0));  GL_CHECK_ERRORS;
-	trans3 = glm::translate(trans3, glm::vec3(0.0f, 0.0f, 0.0f)); // -10
-	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS
+//	trans3 = glm::translate(trans3, glm::vec3(0.0f, 0.0f, 0.0f)); // -10
 
 	vectorMerge(verts1, verts2, resVerts1);
 	vectorMerge(resVerts1, vertsQuad, resVerts);
@@ -393,13 +400,15 @@ glfwSetInputMode устанавливает режим ввода для ука�
 
 	load(resVerts, resInd);
 	float t = 0;
-	
+
+	double ms_per_update = 0.09f;//0.115f;
 	while (!glfwWindowShouldClose(window))
 	{
 		time_t begin = time(0);  	
 		
+		trans1 = glm::translate(b1, glm::vec3(0.6f * sin(t), shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.1, 0.2, 0.2));
 		//trans1 = glm::translate(scale1, glm::vec3(1.0f * sin(t), 0.3f, -2.0f));
-		t += 0.1f;
+		t += 0.03f;
 		draw(program, window, verts1.size(), verts2.size(), indices1, indices2, view, project,
 				trans1, trans2, trans3, 
 				maters, lightPos, camPos); GL_CHECK_ERRORS
