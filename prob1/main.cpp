@@ -73,7 +73,7 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 //Создаем и загружаем геометрию поверхности
   //
 {
-    Assimp::Importer import;
+		Assimp::Importer import;
 		const aiScene * scene = import.ReadFile(path, aiProcess_Triangulate);	
 		//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
 
@@ -96,13 +96,12 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 			}
 			for(unsigned int i = 0; i < mesh->mNumFaces; i++)
 			{
-    		aiFace face = mesh->mFaces[i];
-    		for(unsigned int j = 0; j < face.mNumIndices; j++){
-        		indices.push_back(face.mIndices[j]);
+				aiFace face = mesh->mFaces[i];
+				for(unsigned int j = 0; j < face.mNumIndices; j++){
+					indices.push_back(face.mIndices[j]);
 				}
-			// каждого меша еще надо сделать материалы, но потом
 
-			}  
+			}
 		}
 
 }
@@ -110,10 +109,9 @@ void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices, con
 		glGenTextures(1, &texture);	GL_CHECK_ERRORS;
 		glBindTexture(GL_TEXTURE_2D, texture);	GL_CHECK_ERRORS;
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	GL_CHECK_ERRORS;// Set texture wrapping to GL_REPEAT
-  	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);	GL_CHECK_ERRORS;
-  // Set texture filtering
-  	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);	GL_CHECK_ERRORS;
-  	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);	GL_CHECK_ERRORS;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);	GL_CHECK_ERRORS;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);	GL_CHECK_ERRORS;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);	GL_CHECK_ERRORS;
 
 		int width, height;
 		unsigned char* image = SOIL_load_image(pict, &width, &height, 0, SOIL_LOAD_RGB);	GL_CHECK_ERRORS;
@@ -122,48 +120,36 @@ void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices, con
 		SOIL_free_image_data(image);	GL_CHECK_ERRORS;
 		glBindTexture(GL_TEXTURE_2D, 0);	GL_CHECK_ERRORS;
 
-    g_vertexBufferObject = 0;
-    GLuint vertexLocation = 0; // simple layout, assume have only positions at location = 0
-
-   /*Л. везде дальше GL_CHECK_ERRORS - полезный макрос для проверки ошибок в строчке, где он был записан  */
+		g_vertexBufferObject = 0;
+		GLuint vertexLocation = 0; // simple layout, assume have only positions at location = 0
 
 
-/*Л.   Следующие три строки работаем с Vertex Buffer Object (VBO) —  средством OpenGL, позволяющее загружать определенные данные в память GPU
- https://eax.me/opengl-vbo-vao-shaders/*/   
 
 
-    glGenBuffers(1, &g_vertexBufferObject);                                                        GL_CHECK_ERRORS;
-		// Копируем массив с вершинами в буфер OpenGL
+		glGenBuffers(1, &g_vertexBufferObject);                                                        GL_CHECK_ERRORS;
+
 
 		glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);             
 		glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vert), &verts[0], GL_STATIC_DRAW);                                GL_CHECK_ERRORS;
 	
 	
 
-/*Еще 2 строчек -  Vertex Arrays Object (VAO) — штука, которая говорит OpenGL, какую часть VBO следует использовать в последующих командах. 
- Представьте, что VAO представляет собой массив, в элементах которого хранится информация о том, какую часть некого VBO использовать, 
- и как эти данные нужно интерпретировать. Таким образом, один VAO по разным индексам может хранить координаты вершин, их цвета, нормали и прочие данные.
- Переключившись на нужный VAO мы можем эффективно обращаться к данным, на которые он «указывает», используя только индексы.
- https://eax.me/opengl-vbo-vao-shaders/*/   
-    glGenVertexArrays(1, &g_vertexArrayObject);                                                    GL_CHECK_ERRORS;
-    // Привязываем VAO
+		glGenVertexArrays(1, &g_vertexArrayObject);                                                    GL_CHECK_ERRORS;
 		glBindVertexArray(g_vertexArrayObject);                                                        GL_CHECK_ERRORS;
 
 
-//очень возможно, следующая строка не нужна
-    glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);                                           GL_CHECK_ERRORS;
+		glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);                                           GL_CHECK_ERRORS;
 
-	 //Устанавливаем указатели на вершинные атрибуты  
+
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
-		// Атрибут с цветом
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(1);
 
 		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(2);
-// Отвязываем VAO
-    glBindVertexArray(0);
+		glBindVertexArray(0);
+		
 }
 
 void loadMaterial(GLuint progrNum, Material mat) {
@@ -183,34 +169,21 @@ void loadMaterial(GLuint progrNum, Material mat) {
 void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigned int len2, 
 		std::vector <unsigned int> ind1, std::vector <unsigned int> ind2, glm::mat4 view, glm::mat4 proj,
 		glm::mat4 trans1,	glm::mat4 trans2, glm::mat4 trans3, 
-		std::vector <Material> maters, float * lightPos, float * camPos
-  /*, float ** col*/) {
-			    /* Л. glfwPollEvents  обрабатывает только те события, которые уже находятся в очереди событий, а затем сразу же возвращается. 
-    Обработка событий вызовет окно и входные обратные вызовы, связанные с этими событиями. */
+		std::vector <Material> maters, float * lightPos, float * camPos) {
 		glfwPollEvents();
 
+		program.StartUseShader();                           GL_CHECK_ERRORS;
 
 
-/* Л. program.StartUseShader() запускаем шейдеры*/
-    program.StartUseShader();                           GL_CHECK_ERRORS;
+		glViewport  (0, 0, WIDTH, HEIGHT);
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear     (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 
-    // очистка и заполнение экрана цветом
-    //
-		    /* Л.  glViewport определяет аффинное преобразование координат x и y из нормализованных координат устройства в координаты окна.  
-    https://www.khronos.org/registry/OpenGL-Refpages/es2.0/xhtml/glViewport.xml*/
-    glViewport  (0, 0, WIDTH, HEIGHT);
-		glEnable(GL_DEPTH_TEST);  		    /*Л. следующие две строчки - см.ранее*/
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear     (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    // draw call
-    //
-		    /*Л. рисуем примитивы, которые загрузили ранее
-      https://eax.me/opengl-vbo-vao-shaders/*/   
 
 
-    glBindVertexArray(g_vertexArrayObject); GL_CHECK_ERRORS;
+		glBindVertexArray(g_vertexArrayObject); GL_CHECK_ERRORS;
 
 		GLint lightPosLoc = glGetUniformLocation(program.GetProgram(), "g_lightPos");
 		glUniform3f(lightPosLoc, lightPos[0], lightPos[1], lightPos[2]); 
@@ -242,23 +215,21 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 			for (int j = 0; j < 3; j++) {
 				points[j] = ind1[3 * i + j];
 			}
-	
-    	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
 		}
 
 
 		transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
 		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans2)); GL_CHECK_ERRORS;
 
-    loadMaterial(program.GetProgram(), maters[1]);
+		loadMaterial(program.GetProgram(), maters[1]);
 
 
 		for (int i = 0; 3 * i + 2 < ind2.size(); i++) {
 			for (int j = 0; j < 3; j++) {
 				points[j] = len1 + ind2[3 * i + j];
 			}
-	
-    	glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, points);
 		}
 
 		transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
@@ -269,15 +240,13 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 		hasTextureLoc2 = glGetUniformLocation(program.GetProgram(), "hasTexture");   GL_CHECK_ERRORS;
 		glUniform1i(hasTextureLoc2, 1); GL_CHECK_ERRORS;
 		
-    glDrawArrays(GL_TRIANGLE_FAN, len1 + len2, 4);
+		glDrawArrays(GL_TRIANGLE_FAN, len1 + len2, 4);
 		
 
-    glBindVertexArray(0);
+		glBindVertexArray(0);
 
-    program.StopUseShader();
+		program.StopUseShader();
 
-//Л. glfwSwapBuffers меняет местами передний и задний буферы указанного окна. 
-//Если интервал подкачки больше нуля, драйвер GPU ожидает указанное количество обновлений экрана перед заменой буферов.
 		glfwSwapBuffers(window); 
 
 }
@@ -295,151 +264,134 @@ void vectorMerge(std::vector <T> &v1, std::vector<T> &v2, std::vector<T> &res) {
 
 int initGL()
 {
-	int res = 0;
-	//грузим функции opengl через glad
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-	{
-		std::cout << "Failed to initialize OpenGL context" << std::endl;
-		return -1;
-	}
+		int res = 0;
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+		{
+			std::cout << "Failed to initialize OpenGL context" << std::endl;
+			return -1;
+		}
 
-	std::cout << "Vendor: "   << glGetString(GL_VENDOR) << std::endl;
-	std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
-	std::cout << "Version: "  << glGetString(GL_VERSION) << std::endl;
-	std::cout << "GLSL: "     << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+		std::cout << "Vendor: "   << glGetString(GL_VENDOR) << std::endl;
+		std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
+		std::cout << "Version: "  << glGetString(GL_VERSION) << std::endl;
+		std::cout << "GLSL: "     << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
-	return 0;
+		return 0;
 }
 
 
 int main(int argc, char** argv)
 {
-	 /* glfwInit инициализирует библиотеку GLFW. Перед использованием большинства функций GLFW необходимо инициализировать GLFW,
-   а перед завершением работы приложения необходимо завершить GLFW, чтобы освободить ресурсы, выделенные во время или после инициализации. */
-	if(!glfwInit())
-    return -1;
+		if(!glfwInit())
+			return -1;
 
 	//запрашиваем контекст opengl версии 3.3
-	//делаем начальные настройки Л.
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); 
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); 
-	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE); 
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); 
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); 
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); 
+		glfwWindowHint(GLFW_RESIZABLE, GL_FALSE); 
 
-  GLFWwindow*  window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL basic sample", nullptr, nullptr);
-  //Эта функция создает окно и связанный с ним контекст OpenGL или OpenGL ES.
-	// Большинство параметров, управляющих созданием окна и его контекста, задаются с помощью подсказок окна(window hints). Л.
+		GLFWwindow*  window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL basic sample", nullptr, nullptr);
 
-	if (window == nullptr)
-	{
-		std::cout << "Failed to create GLFW window" << std::endl;
-		glfwTerminate();
-		return -1;
-	}
+		if (window == nullptr)
+		{
+			std::cout << "Failed to create GLFW window" << std::endl;
+			glfwTerminate();
+			return -1;
+		}
 	
-	/* Л. glfwMakeContextCurrent делает контекст OpenGL или OpenGL ES указанного окна текущим в вызывающем потоке. 
-Контекст можно сделать текущим только в одном потоке за один раз, и каждый поток может иметь только один текущий контекст за один раз. */
-	glfwMakeContextCurrent(window); 
+		glfwMakeContextCurrent(window); 
 
 
-	/* Л.
-glfwSetInputMode устанавливает режим ввода для указанного окна. Режим должен быть одним из GLFW_CURSOR, GLFW_STICKY_KEYS или GLFW_STICKY_MOUSE_BUTTONS.
-*/
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-//функция, см. выше Л.
-	if(initGL() != 0) 
-		return -1;
+
+		if(initGL() != 0) 
+			return -1;
 	
   //Reset any OpenGL errors which could be present for some reason
-	GLenum gl_error = glGetError();
-	while (gl_error != GL_NO_ERROR)
-		gl_error = glGetError();
-
-	//создание шейдерной программы из двух файлов с исходниками шейдеров
-	//используется класс-обертка ShaderProgram
-	std::unordered_map<GLenum, std::string> shaders;
-	shaders[GL_VERTEX_SHADER]   = "vertex.glsl";
-	shaders[GL_FRAGMENT_SHADER] = "fragment.glsl";
-	ShaderProgram program(shaders); GL_CHECK_ERRORS;
+		GLenum gl_error = glGetError();
+		while (gl_error != GL_NO_ERROR)
+			gl_error = glGetError();
 
 
+		std::unordered_map<GLenum, std::string> shaders;
+		shaders[GL_VERTEX_SHADER]   = "vertex.glsl";
+		shaders[GL_FRAGMENT_SHADER] = "fragment.glsl";
+		ShaderProgram program(shaders); GL_CHECK_ERRORS;
 
-// Л. glfwSwapInterval устанавливает интервал подкачки для текущего контекста OpenGL или OpenGL ES,
-// т. е. количество обновлений экрана, ожидающих с момента вызова glfwSwapBuffers до подкачки буферов и возврата.
-  glfwSwapInterval(1); // force 60 frames per second
+
+
+		glfwSwapInterval(1); // force 60 frames per second
 
 	
-	std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
-  std::vector <unsigned int> indices1, indices2, resInd;
-	std::vector <Material> maters;
-	float lightPos[] = {0.3f, (0.341855 + 1.0813) * 0.5 + 0.4, 0.3f};
-	float camPos[] = {0.0f, 1.4, 3.0f};//1.8, 2.8};////0.9f, 2.8f};
+		std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
+		std::vector <unsigned int> indices1, indices2, resInd;
+		std::vector <Material> maters;
+		float lightPos[] = {0.3f, (0.341855 + 1.0813) * 0.5 + 0.4, 0.3f};
+		float camPos[] = {0.0f, 1.4, 3.0f};//1.8, 2.8};////0.9f, 2.8f};
 
-	maters.push_back(Material(1.0f, 0.0f, 0.0f, 0.9, 0.0, 0.0, 0.5, 0.4, 0.4, 0.7, 0.04, 0.04, 0.078125 * 128));
-	maters.push_back(Material(0.7f, 0.5f, 0.0f, 0.25,	0.20725, 0.20725,	1, 0.829, 0.829, 0.296648, 0.296648,0.296648, 0.088 * 128));
-	maters.push_back(Material(1.0f, 1.0f, 1.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
+		maters.push_back(Material(1.0f, 0.0f, 0.0f, 0.9, 0.0, 0.0, 0.5, 0.4, 0.4, 0.7, 0.04, 0.04, 0.078125 * 128));
+		maters.push_back(Material(0.7f, 0.5f, 0.0f, 0.25,	0.20725, 0.20725,	1, 0.829, 0.829, 0.296648, 0.296648,0.296648, 0.088 * 128));
+		maters.push_back(Material(1.0f, 1.0f, 1.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 
-	glm::mat4 view(1.0f), project(1.0f);
-	glm::mat4 trans1(1.0f);  GL_CHECK_ERRORS;
-	float shiftVase = (0.341855 + 1.0813) * 0.5 + 0.937952 * 0.2;
-	glm::mat4 b1(1.0f), b2(1.0f);
+		glm::mat4 view(1.0f), project(1.0f);
+		glm::mat4 trans1(1.0f);  GL_CHECK_ERRORS;
+		float shiftVase = (0.341855 + 1.0813) * 0.5 + 0.937952 * 0.2;
+		glm::mat4 b1(1.0f), b2(1.0f);
 	
-	trans1 = glm::translate(b1, glm::vec3(0.0f, shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.2, 0.3, 0.3));
-	view = glm::translate(view, glm::vec3(-camPos[0], -camPos[1], -camPos[2]));
-	float aspect = WIDTH / HEIGHT;
-	project = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
-	loadScene("../objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
-	//минимальныая координата вазы -0.937952, максимальная 1.78299
+		trans1 = glm::translate(b1, glm::vec3(0.0f, shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.2, 0.3, 0.3));
+		view = glm::translate(view, glm::vec3(-camPos[0], -camPos[1], -camPos[2]));
+		float aspect = WIDTH / HEIGHT;
+		project = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
+		loadScene("../objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
+		//минимальныая координата вазы -0.937952, максимальная 1.78299
 
 
-	glm::mat4 trans2(1.0f);  GL_CHECK_ERRORS;
+		glm::mat4 trans2(1.0f);  GL_CHECK_ERRORS;
 	
-	glm::mat4 a1(1.0f), a2(1.0f);
-	trans2 = glm::translate(a1, glm::vec3(0.0f, 0.341855 * 0.5, 0.0f)) * glm::scale(a2, glm::vec3(0.3, 0.5, 0.5));
+		glm::mat4 a1(1.0f), a2(1.0f);
+		trans2 = glm::translate(a1, glm::vec3(0.0f, 0.341855 * 0.5, 0.0f)) * glm::scale(a2, glm::vec3(0.3, 0.5, 0.5));
 
-	loadScene("../objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS;
+		loadScene("../objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS;
 		//минимальныая координата стола -0.341855, максимальная 1.0813
 
-	vertsQuad.push_back(Vert(-2, 2, 0, 0, 0, 1, 0.0, 0.0));
-	vertsQuad.push_back(Vert(-2, -2, 0, 0, 0, 1, 0.0, 10.0));
-	vertsQuad.push_back(Vert(2, -2, 0, 0, 0, 1, 10.0, 10.0));
-	vertsQuad.push_back(Vert(2, 2, 0, 0, 0, 1, 10.0, 0.0));
+		vertsQuad.push_back(Vert(-2, 2, 0, 0, 0, 1, 0.0, 0.0));
+		vertsQuad.push_back(Vert(-2, -2, 0, 0, 0, 1, 0.0, 10.0));
+		vertsQuad.push_back(Vert(2, -2, 0, 0, 0, 1, 10.0, 10.0));
+		vertsQuad.push_back(Vert(2, 2, 0, 0, 0, 1, 10.0, 0.0));
 
-	glm::mat4 trans3(1.0f);  GL_CHECK_ERRORS;
-	trans3 = glm::rotate(trans3, 90.0f, glm::vec3(1.0, 0.0, 0.0));  GL_CHECK_ERRORS;
-//	trans3 = glm::translate(trans3, glm::vec3(0.0f, 0.0f, 0.0f)); // -10
+		glm::mat4 trans3(1.0f);  GL_CHECK_ERRORS;
+		trans3 = glm::rotate(trans3, 90.0f, glm::vec3(1.0, 0.0, 0.0));  GL_CHECK_ERRORS;
 
-	vectorMerge(verts1, verts2, resVerts1);
-	vectorMerge(resVerts1, vertsQuad, resVerts);
-	vectorMerge(indices1, indices2, resInd);
-
+		vectorMerge(verts1, verts2, resVerts1);
+		vectorMerge(resVerts1, vertsQuad, resVerts);
+		vectorMerge(indices1, indices2, resInd);
 
 
-	load(resVerts, resInd, "../floor3.jpg");
-	float t = 0;
 
-	double ms_per_update = 0.09f;//0.115f;
-	while (!glfwWindowShouldClose(window))
-	{
-		time_t begin = time(0);  	
+		load(resVerts, resInd, "../floor3.jpg");
+		float t = 0;
+
+		double ms_per_update = 0.09f;//0.115f;
+		while (!glfwWindowShouldClose(window))
+		{
+			time_t begin = time(0);  	
 		
-		trans1 = glm::translate(b1, glm::vec3(0.6f * sin(t), shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.1, 0.2, 0.2));
-		t += 0.03f;
-		draw(program, window, verts1.size(), verts2.size(), indices1, indices2, view, project,
+			trans1 = glm::translate(b1, glm::vec3(0.6f * sin(t), shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.1, 0.2, 0.2));
+			t += 0.03f;
+			draw(program, window, verts1.size(), verts2.size(), indices1, indices2, view, project,
 				trans1, trans2, trans3, 
 				maters, lightPos, camPos); GL_CHECK_ERRORS
-		sleep(ms_per_update - difftime(time(0), begin));
-	}
+			sleep(ms_per_update - difftime(time(0), begin));
+		}
 
 	//очищаем vbo и vao перед закрытием программы
-  //
-	glDeleteVertexArrays(1, &g_vertexArrayObject);
-  glDeleteBuffers(1, &g_vertexBufferObject);
+		glDeleteVertexArrays(1, &g_vertexArrayObject);
+		glDeleteBuffers(1, &g_vertexBufferObject);
 
-	glfwTerminate();
-	return 0;
+		glfwTerminate();
+		return 0;
 }
 
-///////ВНИМАНИЕ !!!!! АДРЕСА - АБСОЛЮТНЫЕ !!! РАБОТАТЬ НЕ БУДЕТ!!!!!!!!!!
