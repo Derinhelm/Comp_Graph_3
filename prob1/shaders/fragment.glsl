@@ -41,7 +41,7 @@ void main()
   vec3 result = (g_ambient + diffuse + specular) * g_objectColor;
   color = vec4(result, 1.0f);
   if (hasTexture == 1) {
-    color = color * texture(text, TexCoord);
+    color = vec4(result, 0.1f) * texture(text, TexCoord);
   }
   
 }

@@ -29,16 +29,18 @@ GLuint g_vertexBufferObject;
 
 	//Создание переменной для хранения идентификатора VAO(см.далее)
 GLuint g_vertexArrayObject;
-GLuint g_vertexEBO;
+GLuint texture;	
 float min1 = 100000, max1 = -100000; ///////////////////////////////////////////////////////////////////////убрать
 
 
 struct Vert {
 	glm::vec3 c; //координаты вершины
 	glm::vec3 n; //нормаль
-	Vert(float v1, float v2, float v3, float n1, float n2, float n3) {
+	glm::vec2 t;	//текстурные координаты(0, 0, так как у стола и вазы нет текстур)
+	Vert(float v1, float v2, float v3, float n1, float n2, float n3, float t1 = 0.0, float t2 = 0.0) {
 		c = glm::vec3(v1, v2, v3);
 		n = glm::vec3(n1, n2, n3);
+		t = glm::vec2(t1, t2);
 	}
 };
 
@@ -73,8 +75,7 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 {
     Assimp::Importer import;
 		const aiScene * scene = import.ReadFile(path, aiProcess_Triangulate);	
-		std:: cout << scene -> mNumMaterials << "\n";
-			//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
+		//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
 
 		//У vase - 1 потомок с 1 мешем, у table - 1 потомок с двумя мешами
 		//Сразу перейдем к потомку
@@ -105,7 +106,22 @@ void loadScene (std::string path, std::vector <Vert> & verts, std::vector <unsig
 		}
 
 }
-void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
+void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices, const char * pict) {
+		glGenTextures(1, &texture);	GL_CHECK_ERRORS;
+		glBindTexture(GL_TEXTURE_2D, texture);	GL_CHECK_ERRORS;
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	GL_CHECK_ERRORS;// Set texture wrapping to GL_REPEAT
+  	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);	GL_CHECK_ERRORS;
+  // Set texture filtering
+  	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);	GL_CHECK_ERRORS;
+  	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);	GL_CHECK_ERRORS;
+
+		int width, height;
+		unsigned char* image = SOIL_load_image(pict, &width, &height, 0, SOIL_LOAD_RGB);	GL_CHECK_ERRORS;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);	GL_CHECK_ERRORS;
+		glGenerateMipmap(GL_TEXTURE_2D);	GL_CHECK_ERRORS;
+		SOIL_free_image_data(image);	GL_CHECK_ERRORS;
+		glBindTexture(GL_TEXTURE_2D, 0);	GL_CHECK_ERRORS;
+
     g_vertexBufferObject = 0;
     GLuint vertexLocation = 0; // simple layout, assume have only positions at location = 0
 
@@ -138,8 +154,14 @@ void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
     glBindBuffer(GL_ARRAY_BUFFER, g_vertexBufferObject);                                           GL_CHECK_ERRORS;
 
 	 //Устанавливаем указатели на вершинные атрибуты  
-		glEnableVertexAttribArray(0);  /*здесь vertexlocation = 0*/                     //  GL_CHECK_ERRORS;
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
+		// Атрибут с цветом
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(1);
+
+		glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+		glEnableVertexAttribArray(2);
 // Отвязываем VAO
     glBindVertexArray(0);
 }
@@ -198,22 +220,22 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 
 
 		GLuint transformLoc1 = glGetUniformLocation(program.GetProgram(), "g_matrixView");   GL_CHECK_ERRORS;
-	//	std::cout << "view" << transformLoc1 << "\n";
 		glUniformMatrix4fv(transformLoc1, 1, GL_FALSE, glm::value_ptr(view)); GL_CHECK_ERRORS;
 
 		GLuint transformLoc3 = glGetUniformLocation(program.GetProgram(), "g_matrixProj");   GL_CHECK_ERRORS;
-	//	std::cout << "proj" << transformLoc3 << "\n";
 		glUniformMatrix4fv(transformLoc3, 1, GL_FALSE, glm::value_ptr(proj)); GL_CHECK_ERRORS;
 
 
 
 		GLuint transformLoc2 = glGetUniformLocation(program.GetProgram(), "g_matrixScale");   GL_CHECK_ERRORS;
-	//	std::cout << "trans" << transformLoc2 << "\n";
 		glUniformMatrix4fv(transformLoc2, 1, GL_FALSE, glm::value_ptr(trans1)); GL_CHECK_ERRORS;
 
+		glBindTexture(GL_TEXTURE_2D, texture);	GL_CHECK_ERRORS;
 
 		loadMaterial(program.GetProgram(), maters[0]);
 	
+		GLuint hasTextureLoc2 = glGetUniformLocation(program.GetProgram(), "hasTexture");   GL_CHECK_ERRORS;
+		glUniform1i(hasTextureLoc2, 0); GL_CHECK_ERRORS;
 		unsigned int points[3] = {0, 1, 2};
 		
 		for (int i = 0; 3 * i + 2 < ind1.size(); i++) {
@@ -244,7 +266,8 @@ void draw(ShaderProgram program, GLFWwindow*  window, unsigned int len1, unsigne
 
 		loadMaterial(program.GetProgram(), maters[2]);
 
-
+		hasTextureLoc2 = glGetUniformLocation(program.GetProgram(), "hasTexture");   GL_CHECK_ERRORS;
+		glUniform1i(hasTextureLoc2, 1); GL_CHECK_ERRORS;
 		
     glDrawArrays(GL_TRIANGLE_FAN, len1 + len2, 4);
 		
@@ -351,42 +374,38 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
   std::vector <unsigned int> indices1, indices2, resInd;
 	std::vector <Material> maters;
-	float lightPos[] = {0.0f, (0.341855 + 1.0813) * 0.5 + 0.1, 0.1f};
-	float camPos[] = {0.0f, 1.4, 2.8f};//1.8, 2.8};////0.9f, 2.8f};
+	float lightPos[] = {0.3f, (0.341855 + 1.0813) * 0.5 + 0.4, 0.3f};
+	float camPos[] = {0.0f, 1.4, 3.0f};//1.8, 2.8};////0.9f, 2.8f};
 
-	maters.push_back(Material(1.0f, 0.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
-	maters.push_back(Material(0.0f, 1.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
-	maters.push_back(Material(0.0f, 0.0f, 1.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
+	maters.push_back(Material(1.0f, 0.0f, 0.0f, 0.9, 0.0, 0.0, 0.5, 0.4, 0.4, 0.7, 0.04, 0.04, 0.078125 * 128));
+	maters.push_back(Material(0.7f, 0.5f, 0.0f, 0.25,	0.20725, 0.20725,	1, 0.829, 0.829, 0.296648, 0.296648,0.296648, 0.088 * 128));
+	maters.push_back(Material(1.0f, 1.0f, 1.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 
 	glm::mat4 view(1.0f), project(1.0f);
 	glm::mat4 trans1(1.0f);  GL_CHECK_ERRORS;
 	float shiftVase = (0.341855 + 1.0813) * 0.5 + 0.937952 * 0.2;
 	glm::mat4 b1(1.0f), b2(1.0f);
 	
-	trans1 = glm::translate(b1, glm::vec3(0.0f, shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.1, 0.2, 0.2));
+	trans1 = glm::translate(b1, glm::vec3(0.0f, shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.2, 0.3, 0.3));
 	view = glm::translate(view, glm::vec3(-camPos[0], -camPos[1], -camPos[2]));
 	float aspect = WIDTH / HEIGHT;
 	project = glm::perspective( 45.0f, (float)WIDTH/(float)HEIGHT, 0.1f, 100.0f);
-	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
+	loadScene("../objects/vase.obj", verts1, indices1); GL_CHECK_ERRORS
 	//минимальныая координата вазы -0.937952, максимальная 1.78299
 
-	std::cout << min1 << "\n" << max1 << "\n";
-	std::cout << "---------------------------------" << "\n";
 
 	glm::mat4 trans2(1.0f);  GL_CHECK_ERRORS;
 	
 	glm::mat4 a1(1.0f), a2(1.0f);
 	trans2 = glm::translate(a1, glm::vec3(0.0f, 0.341855 * 0.5, 0.0f)) * glm::scale(a2, glm::vec3(0.3, 0.5, 0.5));
 
-	loadScene("/media/derin/DATA/Computer_Graph/3/prob1/objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS;
+	loadScene("../objects/table_simple.obj", verts2, indices2); GL_CHECK_ERRORS;
 		//минимальныая координата стола -0.341855, максимальная 1.0813
-	std::cout << min1 << "\n" << max1 << "\n";
-	std::cout << "---------------------------------" << "\n";
 
-	vertsQuad.push_back(Vert(-3, 3, 0, 0, 0, 1));
-	vertsQuad.push_back(Vert(-3, -3, 0, 0, 0, 1));
-	vertsQuad.push_back(Vert(3, -3, 0, 0, 0, 1));
-	vertsQuad.push_back(Vert(3, 3, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(-2, 2, 0, 0, 0, 1, 0.0, 0.0));
+	vertsQuad.push_back(Vert(-2, -2, 0, 0, 0, 1, 0.0, 10.0));
+	vertsQuad.push_back(Vert(2, -2, 0, 0, 0, 1, 10.0, 10.0));
+	vertsQuad.push_back(Vert(2, 2, 0, 0, 0, 1, 10.0, 0.0));
 
 	glm::mat4 trans3(1.0f);  GL_CHECK_ERRORS;
 	trans3 = glm::rotate(trans3, 90.0f, glm::vec3(1.0, 0.0, 0.0));  GL_CHECK_ERRORS;
@@ -396,7 +415,9 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	vectorMerge(resVerts1, vertsQuad, resVerts);
 	vectorMerge(indices1, indices2, resInd);
 
-	load(resVerts, resInd);
+
+
+	load(resVerts, resInd, "../floor3.jpg");
 	float t = 0;
 
 	double ms_per_update = 0.09f;//0.115f;
@@ -405,7 +426,6 @@ glfwSetInputMode устанавливает режим ввода для ука�
 		time_t begin = time(0);  	
 		
 		trans1 = glm::translate(b1, glm::vec3(0.6f * sin(t), shiftVase, 0.0f)) * glm::scale(b2, glm::vec3(0.1, 0.2, 0.2));
-		//trans1 = glm::translate(scale1, glm::vec3(1.0f * sin(t), 0.3f, -2.0f));
 		t += 0.03f;
 		draw(program, window, verts1.size(), verts2.size(), indices1, indices2, view, project,
 				trans1, trans2, trans3, 
