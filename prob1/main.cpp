@@ -3,7 +3,7 @@
 #include "ShaderProgram.h"
 #include <unistd.h>
 
-
+#include <SOIL/SOIL.h>
 //External dependencies
 #define GLFW_DLL
 #include <GLFW/glfw3.h>
@@ -140,8 +140,6 @@ void load (std::vector <Vert> & verts, std::vector <unsigned int> & indices) {
 	 //Устанавливаем указатели на вершинные атрибуты  
 		glEnableVertexAttribArray(0);  /*здесь vertexlocation = 0*/                     //  GL_CHECK_ERRORS;
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)0);
-	//	glEnableVertexAttribArray(1);  /*здесь vertexlocation = 0*/                     //  GL_CHECK_ERRORS;
-   // glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vert), (void*)offsetof(Vert, n));
 // Отвязываем VAO
     glBindVertexArray(0);
 }
@@ -353,8 +351,8 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	std::vector <Vert> verts1, verts2, vertsQuad, resVerts1, resVerts;
   std::vector <unsigned int> indices1, indices2, resInd;
 	std::vector <Material> maters;
-	float lightPos[] = {0.2f, (0.341855 + 1.0813) * 0.5 + 0.05, 0.0f};
-	float camPos[] = {0.0f, 0.8, 2.8f};//1.8, 2.8};////0.9f, 2.8f};
+	float lightPos[] = {0.0f, (0.341855 + 1.0813) * 0.5 + 0.1, 0.1f};
+	float camPos[] = {0.0f, 1.4, 2.8f};//1.8, 2.8};////0.9f, 2.8f};
 
 	maters.push_back(Material(1.0f, 0.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
 	maters.push_back(Material(0.0f, 1.0f, 0.0f,  0.1,0.18725, 0.1745,  0.396, 0.74151, 0.69102,  0.297254, 0.30829, 0.306678, 0.1 * 128));
@@ -385,10 +383,10 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	std::cout << min1 << "\n" << max1 << "\n";
 	std::cout << "---------------------------------" << "\n";
 
-	vertsQuad.push_back(Vert(-100, 100, 0, 0, 0, 1));
-	vertsQuad.push_back(Vert(-100, -100, 0, 0, 0, 1));
-	vertsQuad.push_back(Vert(100, -100, 0, 0, 0, 1));
-	vertsQuad.push_back(Vert(100, 100, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(-3, 3, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(-3, -3, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(3, -3, 0, 0, 0, 1));
+	vertsQuad.push_back(Vert(3, 3, 0, 0, 0, 1));
 
 	glm::mat4 trans3(1.0f);  GL_CHECK_ERRORS;
 	trans3 = glm::rotate(trans3, 90.0f, glm::vec3(1.0, 0.0, 0.0));  GL_CHECK_ERRORS;
@@ -423,3 +421,5 @@ glfwSetInputMode устанавливает режим ввода для ука�
 	glfwTerminate();
 	return 0;
 }
+
+///////ВНИМАНИЕ !!!!! АДРЕСА - АБСОЛЮТНЫЕ !!! РАБОТАТЬ НЕ БУДЕТ!!!!!!!!!!

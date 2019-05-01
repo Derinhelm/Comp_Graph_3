@@ -4,6 +4,8 @@ in vec3 pointPos;
 in vec3 pointNorm;
 in vec3 lightPos;
 out vec4 color;
+in vec2 TexCoord;
+
 
 uniform mat4 g_matrixScale;
 uniform mat4 g_matrixView;
@@ -17,6 +19,10 @@ uniform vec3 g_diffuseStrength;
 uniform vec3 g_specularStrength;
 
 uniform float g_shininess;
+
+uniform sampler2D text;
+uniform int hasTexture;
+
 
 
 
@@ -34,4 +40,8 @@ void main()
   
   vec3 result = (g_ambient + diffuse + specular) * g_objectColor;
   color = vec4(result, 1.0f);
+  if (hasTexture == 1) {
+    color = color * texture(text, TexCoord);
+  }
+  
 }
